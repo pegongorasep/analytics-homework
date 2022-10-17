@@ -34,13 +34,13 @@ internal class AnalyticsImpl(private val analyticsConfig: AnalyticsConfig) : Ana
 
     override fun track(event: Event) { sendEvent(event) }
 
-    override fun beginEvent(event: Event) {
+    override fun begin(event: Event) {
         val attributes = event.attributes.toMutableMap()
         attributes[EVENT] = EVENT_BEGIN
         sendEvent(event.copy(attributes = attributes))
     }
 
-    override fun endEvent(event: Event) {
+    override fun end(event: Event) {
         val attributes = event.attributes.toMutableMap()
         attributes[EVENT] = EVENT_END
         sendEvent(event.copy(attributes = attributes))
