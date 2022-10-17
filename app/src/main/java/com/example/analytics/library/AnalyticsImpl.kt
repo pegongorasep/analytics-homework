@@ -34,8 +34,8 @@ class AnalyticsImpl(private val config: Config) : Analytics {
     override fun track(attributes: Event.() -> Unit) {
         val event = object: Event {
             val map = HashMap<String, Any>()
+            fun build(): Map<String, Any> = map
             override fun String.to(any: Any) { map[this] = any }
-            override fun build(): Map<String, Any> = map
         }
         queueAndSend(event.build())
     }
@@ -44,10 +44,9 @@ class AnalyticsImpl(private val config: Config) : Analytics {
         val phase = object: Phase {
             val map = HashMap<String, Any>().apply { PHASE_BEGIN to System.currentTimeMillis() }
             override fun String.to(any: Any) { map[this] = any }
-            override fun build(): Map<String, Any> = map
             override fun end() {
                 map[PHASE_END] = System.currentTimeMillis()
-                queueAndSend(build())
+                queueAndSend(map)
             }
         }
         return phase

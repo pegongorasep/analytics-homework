@@ -16,10 +16,8 @@ interface Analytics {
 
 interface Event {
     infix fun String.to(any: Any)
-    fun build(): Map<String, Any>
 }
 interface Phase {
     infix fun String.to(any: Any)
-    fun build(): Map<String, Any>
     fun end()
 }

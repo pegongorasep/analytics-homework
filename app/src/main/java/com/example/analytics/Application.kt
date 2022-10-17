@@ -11,8 +11,20 @@ class Application: Application() {
     override fun onCreate() {
         super.onCreate()
 
-        analytics = analytics(scope = GlobalScope, version = BuildConfig.VERSION_NAME) {
+        analytics = analytics(
+            scope = GlobalScope,
+            version = BuildConfig.VERSION_NAME,
+        ) {
             pkg = BuildConfig.APPLICATION_ID
         }
+
+        analytics.track {
+            "someParam" to 15
+        }
+
+        val phase = analytics.phase {
+            "someOtherParam" to true
+        }
+        phase.end()
     }
 }
