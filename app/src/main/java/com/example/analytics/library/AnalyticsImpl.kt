@@ -7,81 +7,71 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.collections.HashMap
 
-class AnalyticsBuilder(private val coroutineScope: CoroutineScope) {
-    var version = "1.0.0"
-    var someOtherConfig = "1.0.0"
-
-    fun build(): Analytics = AnalyticsImpl(
-        AnalyticsConfig(version, someOtherConfig, coroutineScope)
-    )
+fun analytics(
+    scope: CoroutineScope,
+    version: String,
+    init: Config.() -> Unit
+): Analytics {
+    val config = Config(scope, version)
+    config.init()
+    return AnalyticsImpl(config)
 }
 
-fun analytics(coroutineScope: CoroutineScope, init: AnalyticsBuilder.() -> Unit): Analytics {
-    val builder = AnalyticsBuilder(coroutineScope)
-    builder.init()
-    return builder.build()
-}
-
-internal data class AnalyticsConfig(
-    val version: String,
-    val someOtherConfig: String,
-    val coroutineScope: CoroutineScope,
-)
-
-internal class AnalyticsImpl(private val analyticsConfig: AnalyticsConfig) : Analytics {
+class AnalyticsImpl(private val config: Config) : Analytics {
     companion object {
-        private const val EVENT = "event"
-        private const val EVENT_BEGIN = "event_begin"
-        private const val EVENT_END = "event_end"
+        private const val PHASE_BEGIN = "phase_begin"
+        private const val PHASE_END = "phase_end"
     }
 
-    private var events: Queue<Event> = ConcurrentLinkedQueue()
-
-    override fun track(event: Event) { sendEvent(event) }
-
-    override fun begin(event: Event) {
-        val attributes = event.attributes.toMutableMap()
-        attributes[EVENT] = EVENT_BEGIN
-        sendEvent(event.copy(attributes = attributes))
+    private var queue: Queue<Map<String, Any>> = ConcurrentLinkedQueue()
+    private fun queueAndSend(map: Map<String, Any>) {
+        queue.add(map)
+        sendQueue()
     }
 
-    override fun end(event: Event) {
-        val attributes = event.attributes.toMutableMap()
-        attributes[EVENT] = EVENT_END
-        sendEvent(event.copy(attributes = attributes))
+    override fun track(attributes: Event.() -> Unit) {
+        val event = object: Event {
+            val map = HashMap<String, Any>()
+            override fun String.to(any: Any) { map[this] = any }
+            override fun build(): Map<String, Any> = map
+        }
+        queueAndSend(event.build())
     }
 
-    private fun sendEvent(event: Event) {
-        analyticsConfig.coroutineScope.launch {
-            try {
-                send(event)
-            } catch (ex: Exception) {
-                events.add(event)
-                sendLocalEvents()
+    override fun phase(attributes: Phase.() -> Unit): Phase {
+        val phase = object: Phase {
+            val map = HashMap<String, Any>().apply { PHASE_BEGIN to System.currentTimeMillis() }
+            override fun String.to(any: Any) { map[this] = any }
+            override fun build(): Map<String, Any> = map
+            override fun end() {
+                map[PHASE_END] = System.currentTimeMillis()
+                queueAndSend(build())
             }
         }
+        return phase
     }
 
-    private suspend fun send(event: Event) {
-        // TODO send to backend
-    }
+    private var sendQueueJob: Job? = null
+    private fun sendQueue() {
+        if (queue.isEmpty() || sendQueueJob != null) return
 
-    private var sendLocalEventsJob: Job? = null
-    private fun sendLocalEvents() {
-        if (events.isEmpty() || sendLocalEventsJob != null) return
-
-        sendLocalEventsJob = analyticsConfig.coroutineScope.launch {
+        sendQueueJob = config.coroutineScope.launch {
             retry {
-                while (events.isNotEmpty()) {
-                    send(events.peek()!!)
-                    events.poll()
+                while (queue.isNotEmpty()) {
+                    send(queue.peek()!!)
+                    queue.poll()
                 }
             }
 
-            sendLocalEventsJob?.cancel()
-            sendLocalEventsJob = null
+            sendQueueJob?.cancel()
+            sendQueueJob = null
         }
+    }
+
+    private suspend fun send(map: Map<String, Any>) {
+        // TODO send to backend
     }
 
     private suspend fun retry(

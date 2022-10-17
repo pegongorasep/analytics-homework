@@ -1,12 +1,25 @@
 package com.example.analytics.library
 
-interface Analytics {
-    // to track a custom event
-    fun track(event: Event)
-    // track the beginning of an event
-    fun begin(event: Event)
-    // track the ending of an event
-    fun end(event: Event)
+import kotlinx.coroutines.CoroutineScope
+
+data class Config(
+    val coroutineScope: CoroutineScope,
+    val version: String,
+) {
+    var pkg: String = ""
 }
 
-data class Event(val id: String, val attributes: Map<String, Any>)
+interface Analytics {
+    fun track(attributes: Event.() -> Unit = {})
+    fun phase(attributes: Phase.() -> Unit = {}): Phase
+}
+
+interface Event {
+    infix fun String.to(any: Any)
+    fun build(): Map<String, Any>
+}
+interface Phase {
+    infix fun String.to(any: Any)
+    fun build(): Map<String, Any>
+    fun end()
+}

@@ -11,8 +11,8 @@ class Application: Application() {
     override fun onCreate() {
         super.onCreate()
 
-        analytics = analytics(GlobalScope) {
-            version = BuildConfig.VERSION_NAME
+        analytics = analytics(scope = GlobalScope, version = BuildConfig.VERSION_NAME) {
+            pkg = BuildConfig.APPLICATION_ID
         }
     }
 }
