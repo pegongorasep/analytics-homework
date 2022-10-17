@@ -17,6 +17,12 @@ class AnalyticsBuilder(private val coroutineScope: CoroutineScope) {
     )
 }
 
+fun analytics(coroutineScope: CoroutineScope, init: AnalyticsBuilder.() -> Unit): Analytics {
+    val builder = AnalyticsBuilder(coroutineScope)
+    builder.init()
+    return builder.build()
+}
+
 internal data class AnalyticsConfig(
     val version: String,
     val someOtherConfig: String,

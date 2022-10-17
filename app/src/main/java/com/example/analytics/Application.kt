@@ -2,7 +2,7 @@ package com.example.analytics
 
 import android.app.Application
 import com.example.analytics.library.Analytics
-import com.example.analytics.library.AnalyticsBuilder
+import com.example.analytics.library.analytics
 import kotlinx.coroutines.GlobalScope
 
 class Application: Application() {
@@ -11,9 +11,8 @@ class Application: Application() {
     override fun onCreate() {
         super.onCreate()
 
-        AnalyticsBuilder(GlobalScope).apply {
+        analytics = analytics(GlobalScope) {
             version = BuildConfig.VERSION_NAME
-            analytics = build()
         }
     }
 }
