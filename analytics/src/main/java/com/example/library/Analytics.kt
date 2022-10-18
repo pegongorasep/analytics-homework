@@ -1,12 +1,15 @@
-package com.example.analytics.library
+package com.example.library
 
 import kotlinx.coroutines.CoroutineScope
 
-data class Config(
-    val coroutineScope: CoroutineScope,
-    val version: String,
-) {
-    var pkg: String = ""
+fun analytics(
+    scope: CoroutineScope,
+    version: String,
+    init: Config.() -> Unit,
+): Analytics {
+    val config = Config(version)
+    config.init()
+    return AnalyticsImpl(config, AnalyticsUploader(scope))
 }
 
 interface Analytics {

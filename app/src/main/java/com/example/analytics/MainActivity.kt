@@ -11,10 +11,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.analytics.ui.theme.MyApplicationTheme
+import com.example.library.Phase
 
 class MainActivity : ComponentActivity() {
+    var analytics = (this.application as Application).analytics
+    lateinit var phase: Phase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        analytics.track { "MainActivity.onCreate" to 15 }
+        phase = analytics.phase { "name" to "MainActivity" }
+
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
@@ -23,6 +31,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        phase.end()
     }
 }
 

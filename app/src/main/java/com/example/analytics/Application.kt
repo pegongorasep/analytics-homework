@@ -1,8 +1,8 @@
 package com.example.analytics
 
 import android.app.Application
-import com.example.analytics.library.Analytics
-import com.example.analytics.library.analytics
+import com.example.library.Analytics
+import com.example.library.analytics
 import kotlinx.coroutines.GlobalScope
 
 class Application: Application() {
@@ -18,13 +18,5 @@ class Application: Application() {
             pkg = BuildConfig.APPLICATION_ID
         }
 
-        analytics.track {
-            "someParam" to 15
-        }
-
-        val phase = analytics.phase {
-            "someOtherParam" to true
-        }
-        phase.end()
     }
 }
